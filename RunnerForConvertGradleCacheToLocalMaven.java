@@ -9,9 +9,10 @@ import java.io.OutputStream;
 
 public class RunnerForConvertGradleCacheToLocalMaven {
 
-    private static final String GRADLE_CACHE_HOME_DIR = "/Users/zhangyipeng/.gradle";
+    private static final String GRADLE_CACHE_HOME_DIR = "/Users/zhangyipeng/.gradle"; // TODO 使用时必须修改：这里修改为你本机的gradle缓存目录的根目录路径
     private static final String GRADLE_CACHE_FILE_DIR = GRADLE_CACHE_HOME_DIR + "/caches/modules-2/files-2.1";
-    private static final String MAVEN_OUTPUT_DIR = GRADLE_CACHE_FILE_DIR + "/000LocalMavenConverted";
+    private static final String MAVEN_OUTPUT_DIR_NAME = "/000LocalMavenConverted";
+    private static final String MAVEN_OUTPUT_DIR = GRADLE_CACHE_FILE_DIR + MAVEN_OUTPUT_DIR_NAME;// 这里作为输出目录，也可以不改，只要能找到到时候拷贝走就行了。
 
     public static void main(String[] args) {
         File gradleCacheFilesDir = new File(GRADLE_CACHE_FILE_DIR);
@@ -29,7 +30,7 @@ public class RunnerForConvertGradleCacheToLocalMaven {
         for (File depGroupDir : gradleCacheDirs) {
             // 找到缓存中的依赖库的每一个组目录
             String groupName = depGroupDir.getName();
-            if (groupName.contains("000")) {
+            if (groupName.contains(MAVEN_OUTPUT_DIR_NAME)) {
                 // 做一个例外，防止自己的目录被拷贝走
                 continue;
             }
@@ -70,37 +71,6 @@ public class RunnerForConvertGradleCacheToLocalMaven {
                 util_copyFileUsingFileStreams(file, outputFile);
             }
         }
-    }
-
-    // 暂无用途
-    private static File findDepJarsAndAars(File destDir) {
-        File finalDepFile = null;
-        for (File file : destDir.listFiles()) {
-            File depFile = null;
-            if (file.isDirectory()) {
-                depFile = findDepJarsAndAars(destDir);
-                if(depFile != null){
-                    // 如果找到了对应的文件，则直接结束。
-                    finalDepFile = depFile;
-                    break;
-                }else{
-                    continue;
-                }
-            } else {
-                depFile = file;
-                String fileName = depFile.getName();
-                if (fileName.endsWith(".jar") || fileName.endsWith(".aar")) {
-                    String[] nameParts = fileName.split(".");
-                    if (!(nameParts[nameParts.length - 2].contains("-sources")
-                        || nameParts[nameParts.length - 2].contains("-doc"))) {
-                        // 只要jar包和aar包，只要不是sources和doc的包，就认为是真正的依赖包
-                        finalDepFile = depFile;
-                        break;
-                    }
-                }
-            }
-        }
-        return finalDepFile;
     }
 
     private static void util_copyFileUsingFileStreams(File source, File dest) {
